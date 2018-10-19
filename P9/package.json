@@ -1,0 +1,42 @@
+{
+  "name": "express-authentication",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "@google/maps": "^0.4.6",
+    "access-token": "^0.2.2",
+    "accesscontrol": "^2.2.1",
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.18.3",
+    "connect-flash": "^0.1.1",
+    "consolidate": "^0.15.1",
+    "cookie-parser": "~1.3.5",
+    "date": "^1.0.2",
+    "debug": "~2.2.0",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "express-session": "^1.12.1",
+    "google-calendar": "^1.3.2",
+    "google-refresh-token": "^0.5.3",
+    "googleapis": "^27.0.0",
+    "mongoose": "^4.13.12",
+    "morgan": "^1.9.0",
+    "passport": "^0.3.2",
+    "passport-facebook": "^2.0.0",
+    "passport-google-oauth": "^0.2.0",
+    "passport-local": "~1.0.0",
+    "passport-spotify": "^1.0.0",
+    "passport-twitter": "^1.0.3",
+    "passport-u2f": "^0.1.0",
+    "randomstring": "^1.1.5",
+    "rbac": "^4.0.2",
+    "refresh-token": "^1.0.0",
+    "request": "^2.85.0",
+    "serve-favicon": "^2.5.0",
+    "spotify-web-api-node": "^3.1.1",
+    "u2f": "^0.1.3"
+  }
+}

@@ -1,0 +1,255 @@
+<% include partials/head %>
+
+<body>
+
+
+
+
+        <a href="/auth/spotify">this to connect spotify</a>
+
+            <h3>The Spotify playlist pool</h3>
+            <div id="spotify_list"></div><br><br>
+            <div style="border:2px solid black;width:350px">
+                <b style="display:block">Spotify controls</b>
+                <button id="prev_spotify"style=" display: inline-block;">Previous track</button>
+                <button id="toggle_spotify"style=" display: inline-block;">Start/pause</button>
+                <button id="next_spotify"style=" display: inline-block;">Next track</button>
+                <div class="slidecontainer" style="display: block;margin-left: auto;margin-right: auto;">
+                    <input type="range" min="1" max="100" value="50" id="myRange"style="display: block;margin-left: auto;margin-right: auto;">
+                    <p style="display: block;margin-left: auto;margin-right: auto;">Value: <span id="demo"></span></p>
+                </div>
+            </div>
+
+            <script src="https://sdk.scdn.co/spotify-player.js"></script>
+            <script>
+
+                window.onSpotifyWebPlaybackSDKReady = () => {
+                    const token = '<%=user.spotify.access%>';
+
+                    const player = new Spotify.Player({
+                        name: 'Web Playback SDK Quick Start Player',
+                        getOAuthToken: cb => { cb(token); }
+                });
+
+
+
+                    // Error handling
+                    player.addListener('initialization_error', ({ message }) => { console.error(message); });
+                    player.addListener('authentication_error', ({ message }) => { console.error(message); });
+                    player.addListener('account_error', ({ message }) => { console.error(message); });
+                    player.addListener('playback_error', ({ message }) => { console.error(message); });
+
+                    // Playback status updates
+                    player.addListener('player_state_changed', state => { console.log(state); player.getVolume().then(volume => {
+                        let volume_percentage = volume * 50;
+                    console.log(`The volume of the player is ${volume_percentage}%`);
+
+                });});
+
+                    // Ready
+                    player.addListener('ready', ({ device_id }) => {
+                        console.log('Ready with Device ID', device_id);
+                    $.ajax({
+                        url: "https://api.spotify.com/v1/me/player",
+
+                        type: "PUT",
+                        contentType: "application/json",
+
+                        headers:{
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer <%=user.spotify.access%>'
+                        },
+
+                        data:'{"device_ids": ["'+device_id+'"]}',
+                        success: function (data) {
+                            player.pause().then(() => {
+                                console.log('Paused!');
+                        });
+                        }
+
+                    });
+                    $.ajax({
+                        url: "https://api.spotify.com/v1/me/playlists",
+
+                        type: "GET",
+                        contentType: "application/json",
+
+                        headers:{
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer <%=user.spotify.access%>'
+                        },
+
+                        success: function (data) {
+
+                            console.log(JSON.stringify(data.items[0].name));
+                            for(i in data.items){
+
+                                $( "#spotify_list" ).append( '<button  class="lists" value="' +data.items[i].uri+'" >'+data.items[i].name+'</button>' );
+
+
+                            }
+                        }
+
+                    });
+                    $('#spotify_list').on('click', '.lists', function(){
+                        var uri=this.value;
+                        $.ajax({
+                            url: "https://api.spotify.com/v1/me/player/play?device_id="+device_id,
+
+                            type: "PUT",
+                            contentType: "application/json",
+
+                            headers:{
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer <%=user.spotify.access%>'
+                            },
+
+                            data:'{"context_uri": "'+uri+'"}',
+                            success: function (data) {
+                            }
+
+                        });
+                    });
+                });
+                    // Not Ready
+                    player.addListener('not_ready', ({ device_id }) => {
+                        console.log('Device ID has gone offline', device_id);
+                });
+                    var slider = document.getElementById("myRange");
+                    var output = document.getElementById("demo");
+                    output.innerHTML = slider.value;
+
+                    slider.oninput = function() {
+
+                        player.setVolume(this.value*0.01).then(() => {
+                            console.log('Volume updated!');
+                    });
+                        output.innerHTML = this.value;
+                    }
+                    $("#toggle_spotify").click(function(){
+                        player.togglePlay().then(() => {
+                            console.log('Toggled playback!');
+                    });                  });
+                    $("#next_spotify").click(function(){
+                        player.nextTrack().then(() => {
+                            console.log('Skipped to next track!');
+                    });
+                    });
+                    $("#prev_spotify").click(function(){
+                        player.previousTrack().then(() => {
+                            console.log('Set to previous track!');
+                    });
+                    });
+
+
+                    // Connect to the player!
+                    player.connect();
+                };
+
+            </script>
+
+
+
+<script>
+    /* Get an authenticat11ion request from the server,
+     * sign it with the key, verify the results on the server
+     */
+    if (document.getElementById("sub"))
+        document.getElementById("sub").disabled = true;
+
+    /* Get a registration request from the server, use it to register the key, send the results back
+     * to server and check if it was successful
+     */
+    function register() {
+        ajaxGet("/api/register_request", function(authRequest) {
+//            alert(authRequest);
+
+            var req = JSON.parse(authRequest);
+            alert("Press your key");
+            u2f.register(req.APP_ID,[req], [], function(res) {
+                ajaxPost("/api/register", res, function(res) {
+                    res=JSON.parse(res);
+                    if (JSON.stringify(res.stat) === "true") {
+                        alert("Successfully registered that key. You can now view student data."+ res.usr);
+                        document.getElementById("pub").value = JSON.stringify(res.usr.publicKey);
+                        document.getElementById("han").value = JSON.stringify(res.usr.keyHandle);
+                        document.getElementById("sub").disabled = false;
+                        document.getElementById("usr").value = JSON.stringify(res.usr);
+
+
+                    } else {
+                        alert(res.usr);
+                    }
+                });
+            });
+        });
+    }
+    /* Very basic ajax functions */
+    function ajaxGet(url, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.onload = function() {
+            //alert("url "+url+"  cb"+xhr.responseText);
+
+            cb(xhr.responseText);
+        };
+        xhr.send();
+    }
+    function ajaxPost(url, data, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        xhr.setRequestHeader("Content-type", "application/json");
+        xhr.onload = function() {
+            cb(xhr.responseText);
+        };
+        xhr.send(JSON.stringify(data));
+    }
+    $('.btn-number').click(function(e){
+        e.preventDefault();
+
+        fieldName = $(this).attr('data-field');
+        type      = $(this).attr('data-type');
+        var input = $("input[name='"+fieldName+"']");
+        var currentVal = parseInt(input.val());
+        if (!isNaN(currentVal)) {
+            if(type == 'minus') {
+
+                if(currentVal > input.attr('min')) {
+                    input.val(currentVal - 1).change();
+                }
+                if(parseInt(input.val()) == input.attr('min')) {
+                    $(this).attr('disabled', true);
+                }
+
+            } else if(type == 'plus') {
+
+                if(currentVal < input.attr('max')) {
+                    input.val(currentVal + 1).change();
+                }
+                if(parseInt(input.val()) == input.attr('max')) {
+                    $(this).attr('disabled', true);
+                }
+
+            }
+        } else {
+            input.val(0);
+        }
+
+    });
+
+
+
+</script>
+
+        <section class="features">
+            <ul id="results">
+            </ul>
+            <div id="features-chart-container">
+                <canvas id="features-chart"></canvas>
+            </div>
+        </section>
+</body>
+</html>
