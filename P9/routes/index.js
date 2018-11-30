@@ -194,10 +194,11 @@ router.post("/spotifyanalysis", function (req, res) {
 
 
         console.log(req.body);
-        var seder_array= [];
+        var sender_array= [];
  for(var i=0;i<req.body.rec_songs.length;i++){
-
+sender_array.push({id:req.body.rec_songs[i], arousal: Math.random(), valence:Math.random(), depth:Math.random()});
  }
+//I stopped coding here ------------------------------------------------------------
   res.send("hi");
 
     });
