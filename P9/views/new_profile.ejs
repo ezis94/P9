@@ -9,6 +9,10 @@
 </header>
 
 <main>
+    <% if (user.spotify.enabled!="true") {%>
+    <a href="/auth/spotify">this to connect spotify</a>
+<%}
+    else {%>
     <h3>The Spotify playlist pool</h3>
     <div id="spotify_list"></div><br><br>
     <div style="border:2px solid black;width:350px">
@@ -150,6 +154,12 @@
 
         var rowHeight = height / arrayLikes.length;
 
+
+
+
+
+
+//click and change the part of song
         featuresChart.addEventListener("click", clickEvent => {
             const time =
                 (clickEvent.offsetX / featuresChart.width) * data.track.duration * 2;
@@ -184,6 +194,104 @@ console.log(seekTime + "seek");
             ).catch(console.log);
         }
     });
+
+//doubleclick for reccomendation
+        featuresChart.addEventListener("dblclick", clickEvent => {
+            const time =
+                (clickEvent.offsetX / featuresChart.width) * data.track.duration * 2;
+
+
+            console.log(
+                "FloorPosition: ",
+                getFloorRowPosition(clickEvent.offsetY * 2, rowHeight)
+            );
+
+            const kind = getFloorRowPosition(clickEvent.offsetY * 2, rowHeight);
+            if (kind == 0) {
+                const seekTime = binaryIndexOf.call(
+                    arrayLikes[kind],
+                    time,
+                    e => e.start,
+                    (element, index) => element
+                );
+                console.log("arraylike: ", arrayLikes[getFloorRowPosition(clickEvent.offsetY * 2, rowHeight)]);
+                var endtime;
+                for (var i=0; i <arrayLikes[getFloorRowPosition(clickEvent.offsetY * 2, rowHeight)].length;i++){
+                    if (arrayLikes[getFloorRowPosition(clickEvent.offsetY * 2, rowHeight)][i].start == seekTime) endtime=seekTime+arrayLikes[getFloorRowPosition(clickEvent.offsetY * 2, rowHeight)][i].duration;
+                }
+
+                var newArrayLikes= [];
+                for (var i=0; i<arrayLikes[3].length;i++){
+                    if((arrayLikes[3][i].start>=seekTime)&&(arrayLikes[3][i].start<endtime))newArrayLikes.push(arrayLikes[3][i]);
+                }
+                console.log("pitchstuff: ", newArrayLikes);
+
+                console.log(seekTime + "   seek   " + endtime);
+                $.ajax({
+                    url: "https://api.spotify.com/v1/me/player/currently-playing",
+
+                    type: "GET",
+                    contentType: "application/json",
+
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+
+                        Authorization: `Bearer ${accessToken}`
+                    },
+
+
+                    success: function(data) {
+                        console.log(data.item.id);
+                        $.ajax({
+                            url: "https://api.spotify.com/v1/recommendations",
+
+                            type: "GET",
+                            contentType: "application/json",
+
+                            headers: {
+                                Accept: "application/json",
+                                "Content-Type": "application/json",
+
+                                Authorization: `Bearer ${accessToken}`
+                            },
+
+                            data: {seed_tracks: data.item.id , limit:100},
+
+                            success: function(data1) {
+                                //here we have the 100 songs!!!!!-----------------------------------------------------------------------------------------------
+
+                                console.log(data1);
+
+                                alert(data1.tracks[0]);
+                                var send_array=[];
+                                for (var i = 0; i<data1.tracks.length;i++){
+                                    send_array[i]= data1.tracks[i].id;
+                                }
+                                alert(send_array);
+                                var sender = {rec_songs:send_array, seed_song:data.item.id};
+                                $.ajax({
+                                    url:'/spotifyanalysis',   //or 'localhost:4433/spotifyanalysis'
+                                    type: 'POST',
+                                    data: JSON.stringify(sender),
+                                    contentType: 'application/json',
+                                    success: function() { console.log('success');},
+                                    error  : function() { console.log('error');}
+                                });
+
+                            }
+                        });
+
+                    }
+                });
+
+            }
+        });
+
+
+
+
+
         //arrayLikes.forEach((arrayLike, arrayLikeIndex) => {
         const startY = getRowPosition(0) * rowHeight;
         const arrayLikeHeight = rowHeight / (0 + 1);
@@ -399,28 +507,17 @@ console.log(seekTime + "seek");
         player.connect();
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const input = document.querySelector("input");
-    document.querySelector("form").addEventListener("submit", function(event) {
-        event.preventDefault();
-        const searchQuery =
-            "/search?query=" +
-            (query => (!query ? "cut to the feeling" : query))(input.value);
-
-        fetch(searchQuery)
-            .then(e => e.json())
-    .then(data => {
-            document.getElementById("results").innerHTML = data.tracks.items
-                .map(
-                    track =>
-            `<li class="text-salmon" onClick="getAnalysis(&apos;${track.id}&apos;)">${track.name} - ${track.artists[0].name}</li>`).join("\n");
-    })
-    .catch(error => {
-            document.getElementById("results").innerHTML = error;
-    });
-    });
-    });
+    function ajaxPost(url, data, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        xhr.setRequestHeader("Content-type", "application/json");
+        xhr.onload = function() {
+            cb(xhr.responseText);
+        };
+        xhr.send(JSON.stringify(data));
+    }
 
 </script>
+<%}%>
 </body>
 </html>

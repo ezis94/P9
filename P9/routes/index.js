@@ -13,6 +13,9 @@ var SpotifyWebApi = require('spotify-web-api-node');
 var fs = require("fs");
 var Users = {};
 var User1 = require("../models/user");
+var Song = require("../models/song");
+var Song2 = require("../models/song2");
+
 var Car = require("../models/user_car");
 var googleMapsClient = require('@google/maps').createClient({
     clientId: '897949743059-29ad8f8jb800tcr6snvp809bj8odglsu.apps.googleusercontent.com',
@@ -106,9 +109,8 @@ router.get("/features", function (request, response) {
         .then(function(data) {
             response.send(data.body);
         }, failure);
-})
 });
-
+});
 router.get("/analysis", function (request, response) {
     reAuthenticateOnFailure((failure) => {
         spotifyApi.getAudioAnalysisForTrack(request.query.id)
@@ -117,7 +119,131 @@ router.get("/analysis", function (request, response) {
         }, failure);
 });
 });
+router.get("/playlistanalysis", function (request, response) {
+    reAuthenticateOnFailure((failure) => {
 
+        spotifyApi.getPlaylistTracks(request.query.name,request.query.id)
+            .then(function(data) {
+                console.log("Here i am " + JSON.stringify(data));
+
+                data.body.items.forEach(function(element) {
+                    process.nextTick(function () {
+                        Song.findOne({"song.id": element.track.id}, function (err, song) {
+                            if (err) return done(err);
+
+                            else {
+                                reAuthenticateOnFailure((failure) => {
+                                    spotifyApi.getAudioFeaturesForTrack(element.track.id)
+                                        .then(function(data) {
+                                            reAuthenticateOnFailure((failure) => {
+                                                spotifyApi.getAudioAnalysisForTrack(element.track.id)
+                                                    .then(function(data2) {
+                                                        var newSong = new Song();
+                                                       // console.log(data2.body.segments);
+
+                                                        data2.body.segments.forEach(function(art) {
+                                                            var temppitch = [];
+                                                            var temptim = [];
+                                                            var i=0;
+
+                                                            //newSong.song.notes[i].timestamp=art.start;
+                                                            art.pitches.forEach(function(art2) {
+                                                                temppitch[i] = art2;
+                                                                i++;
+                                                                //newSong.song.notes[i].pitches.push(art2);
+                                                            });
+                                                            i=0;
+
+                                                            art.timbre.forEach(function(art2) {
+                                                               // newSong.song.notes[i].timbre.push(art2);
+                                                                temptim[i] = art2;
+                                                                i++
+                                                            });
+                                                            newSong.song.notes.push({timestamp:art.start, pitches: temppitch, timbre: temptim});
+                                                        });
+                                                        newSong.song.id = element.track.id;
+                                                        newSong.song.name = element.track.name;
+                                                        element.track.artists.forEach(function(art) {
+                                                            newSong.song.artists.push(art.name);
+                                                        });
+                                                        newSong.song.acousticness=data.body.acousticness;
+                                                        newSong.song.danceability=data.body.danceability;
+                                                        newSong.song.energy=data.body.energy;
+                                                        newSong.song.instrumentalness=data.body.instrumentalness;
+                                                        newSong.song.loudness=data.body.loudness;
+                                                        newSong.song.valence=data.body.valence;
+
+                                                        newSong.save(function (err) {
+                                                            if (err) throw err;
+                                                            else  console.log("done");
+
+                                                        });                                                    }, failure);
+                                            });
+
+                                        }, failure);
+                                });
+
+                            }
+                        });
+                    });                });
+            }, failure);
+
+
+});});
+router.post("/spotifyanalysis", function (req, res) {
+
+
+        console.log(req.body);
+        var seder_array= [];
+ for(var i=0;i<req.body.rec_songs.length;i++){
+
+ }
+  res.send("hi");
+
+    });
+
+router.get("/playnewlistanalysis", function (request, response) {
+    process.nextTick(function () {
+        Song.find({},function(err, element) {
+            if (err) return done(err);
+
+            else {
+            //    result.forEach(function(element) {
+//var i=7
+for(var i=360;i<373;i++) {
+    var newSong = new Song2();
+
+    newSong.song.notes = element[i].song.notes;
+    newSong.song.id = element[i].song.id;
+    newSong.song.name = element[i].song.name;
+    newSong.song.artists = element[i].song.artists;
+    var loud = 0;
+    if (element[i].song.loudness > -23) {
+        loud = (element[i].song.loudness + 23) / 23;
+        newSong.song.arousal = element[i].song.acousticness * (-0.8) * (-0.65) + element[i].song.energy * (0.94) * (0.86) + loud * (0.88) * (0.86);
+    }
+    else {
+        loud = (element[i].song.loudness + 60) / 37;
+        newSong.song.arousal = element[i].song.acousticness * (-0.8) * (-0.65) + element[i].song.energy * (0.94) * (0.86) + loud * (-0.81) * (-0.65);
+    }
+
+    newSong.song.depth = element[i].song.danceability * (-0.54) * (-0.57) + element[i].song.instrumentalness * (0.84) * (0.89);
+
+    newSong.song.valence = element[i].song.valence;
+
+    newSong.save(function (err) {
+        if (err) throw err;
+        else console.log("done");
+
+    });
+}
+      //          });
+
+
+            }
+        });
+    });
+});
 // listen for requests :)
 
 router.get("/", function(req, res, next) {
@@ -190,7 +316,48 @@ router.get("/profile", isLoggedIn, function(req, res) {
 });
 router.get("/new_profile", isLoggedIn, function(req, res) {
     console.log(req.user);
+    var date = new Date().getTime();
 
+    var user1 = req.user;
+
+    if (req.user.spotify.expires <= date) {
+        console.log(date);
+        var authOptions = {
+            url: 'https://accounts.spotify.com/api/token',
+            headers: {'Authorization': 'Basic ' + (new Buffer('8b9fff06998742eda4e4c23e1b89e2d0:bb00e746afe14aa2b48d9dae4f0b3923').toString('base64'))},
+            form: {
+                grant_type: 'refresh_token',
+                refresh_token: req.user.spotify.refresh
+            },
+            json: true
+        };
+        request.post(authOptions, function (error, response, body) {
+            if (!error && response.statusCode === 200) {
+                var access_token = body.access_token;
+                var expire_in = body.expires_in;
+                console.log(JSON.stringify(body));
+                process.nextTick(function () {
+                    User1.findOne({"local.email": user1.local.email}, function (err, user) {
+                        if (err) return done(err);
+                        if (!user)
+                            return done(null, false, req.flash("loginMessage", "No user found1."));
+                        else {
+
+                            user.spotify.access = access_token;
+                            var date = new Date().getTime();
+
+                            var t = parseInt(expire_in, 10) * 1000;
+                            console.log(t);
+                            user.spotify.expires = date + t;
+                            user.save(function (err) {
+                                if (err) throw err;
+                            });
+                        }
+                    });
+                });
+            }
+        });
+    }
     res.render("new_profile.ejs", {user: req.user});
 
 });
@@ -202,11 +369,10 @@ router.get("/logout", function(req, res) {
 
 
 
-
 router.post(
   "/signup",
   passport.authenticate("local-signup", {
-    successRedirect: "/profile",
+    successRedirect: "/new_profile",
     failureRedirect: "/signup",
     failureFlash: true
   })
@@ -281,7 +447,7 @@ router.get(
 );
 
 router.get('/auth/spotify',
-    passport.authenticate('spotify',{ scope: ["user-read-birthdate", "user-read-email", "user-read-private ","user-modify-playback-state", "playlist-read-private","streaming","user-follow-read"] }),
+    passport.authenticate('spotify',{ scope: ["user-read-birthdate", "user-read-email", "user-read-private ","user-modify-playback-state", "playlist-read-private","streaming","user-follow-read","user-read-currently-playing"] }),
     function(req, res){
         // The request will be redirected to spotify for authentication, so this
         // function will not be called.
@@ -291,7 +457,7 @@ router.get('/auth/spotify/callback',
     passport.authenticate('spotify', { failureRedirect: '/login' }),
     function(req, res) {
         // Successful authentication, redirect home.
-        res.redirect('/profile');
+        res.redirect('/new_profile');
     });
 
 router.get("/api/register_request", function(req, res) {

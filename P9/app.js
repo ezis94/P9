@@ -23,8 +23,10 @@ var users = require("./routes/users");
 
 var configDB = require("./config/database.js");
 mongoose.connect(configDB.url);
+var cors = require('cors')
 
 var app = express();
+app.use(cors());
 
 app.engine("html", engines.hogan);
 

@@ -23,13 +23,7 @@
             <label>Password</label>
             <input type="password" class="form-control" name="password" />
           </div>
-		  <div class="form-group">
-              <label>code</label>
-              <input type="text" class="form-control" name="tname" id="tname">
-          </div>
-		  <input type="button"id="u2f"value="Register a U2F key" onClick="register()">
-		    <input type="hidden" class="form-control" name="pub" id="pub">
-           <input type="hidden" class="form-control" name="han"id="han">
+
 
 			
           <div>
@@ -40,36 +34,12 @@
 /* Get an authentication request from the server,
  * sign it with the key, verify the results on the server
  */	
-document.getElementById("sub").disabled = true;
 
 /* Get a registration requedocument.getElementById("sub").disabled = true;
 st from the server, use it to register the key, send the results back
  * to server and check if it was successful
  */
-function register() {
-    if((document.getElementById("tname").value!=null)&&(document.getElementById("tname").value!="")){
-	ajaxGet("/api/register_request", function(authRequest) {
-	//alert(authRequest);
 
-			var req = JSON.parse(authRequest);
-        document.getElementById("key_wait").style.display = "block";
-        u2f.register(req.APP_ID,[req], [], function(res) {
-				ajaxPost("/api/register", res, function(res) {
-					res=JSON.parse(res);
-					if (JSON.stringify(res.stat) === "true") {
-						//alert("Successfully registered that key."+ res.usr);
-						document.getElementById("pub").value = JSON.stringify(res.usr.publicKey);
-						document.getElementById("han").value = JSON.stringify(res.usr.keyHandle);
-						document.getElementById("sub").disabled = false;
-                        document.getElementById("key_wait").style.display = "none";
-
-					} else {
-						alert(res.usr);
-					}
-				});
-			});
-	});}
-}
 /* Very basic ajax functions */
 function ajaxGet(url, cb) {
 	var xhr = new XMLHttpRequest();
