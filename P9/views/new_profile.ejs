@@ -1,8 +1,9 @@
 <% include partials/head %>
 
-<body>
+<body style = "background-color:#838B88">
+
 <header>
-    <h1>
+    <h1 style="text-align:center ;color:#0C1311">
         Spotify Audio Features
     </h1>
 
@@ -13,16 +14,41 @@
     <a href="/auth/spotify">this to connect spotify</a>
 <%}
     else {%>
-    <h3>The Spotify playlist pool</h3>
-    <div id="spotify_list"></div><br><br>
-    <div style="border:2px solid black;width:350px">
-        <b style="display:block">Spotify controls</b>
-        <button id="prev_spotify"style=" display: inline-block;">Previous track</button>
-        <button id="toggle_spotify"style=" display: inline-block;">Start/pause</button>
-        <button id="next_spotify"style=" display: inline-block;">Next track</button>
-        <div class="slidecontainer" style="display: block;margin-left: auto;margin-right: auto;">
-            <input type="range" min="1" max="100" value="50" id="myRange"style="display: block;margin-left: auto;margin-right: auto;">
-            <p style="display: block;margin-left: auto;margin-right: auto;">Value: <span id="demo"></span></p>
+    <h3 style="color:#0C1311">The Spotify playlist pool</h3>
+    <div style="width: 100%;">
+        <div id="spotify_list" style="width:50%; display: inline-block;"></div><div id="recommendations" style="width:50%; display: inline-block; border:2px solid black"><ul>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+                <li><a>Recommended song</a></li>
+
+            </ul> </div></div>
+    <br><br>
+    <div style=" display: block; margin-left: auto;  margin-right: auto;  background-color: 	#114C98; border:2px solid black;width:350px;border-radius: 25px;border-color: #414767;">
+        <b style="display:block;text-align:center ;color:#F2F5F4">Spotify controls</b>
+        <div id="controls" style="text-align:center">
+            <button type="button" id="prev_spotify" class="btn" style="display: inline-block;border-radius: 50%">
+                <i class="fa fa-fast-backward"></i>
+            </button>
+            <button type="button" id="toggle_spotify" class="btn" style="display: inline-block;border-radius: 50%" >
+                <i class="fa fa-pause"></i>
+                /
+                <i class="fa fa-play"></i>
+            </button>
+            <button type="button" id="next_spotify" class="btn" style="display: inline-block;border-radius: 50%">
+                <i class="fa fa-fast-forward"></i>
+            </button>
+
+        </div>
+        <div class="slidecontainer" style="display: block;margin-left: auto;margin-right: auto; ">
+            <input type="range" min="1" max="100" value="50" id="myRange"style="color:#0C1311;display: block;margin-left: auto;margin-right: auto; background-color: 	#114C98; border-color:	#114C98;">
+            <p style="display: block;margin-left: auto;margin-right: auto;color:#F2F5F4">Value: <span id="demo"></span></p>
         </div>
     </div>
 
@@ -42,6 +68,7 @@
 </footer>
 <script src="https://sdk.scdn.co/spotify-player.js"></script>
 <script>
+
     /* globals Spotify */
     // client-side js
     // run by the browser each time your view template is loaded
@@ -269,13 +296,13 @@ console.log(seekTime + "seek");
                                     send_array[i]= data1.tracks[i].id;
                                 }
                                 alert(send_array);
-                                var sender = {rec_songs:send_array, seed_song:data.item.id};
+                                var sender = {rec_songs:send_array, seed_song:data.item.id, seek_time:seekTime, end_time:endtime};
                                 $.ajax({
                                     url:'/spotifyanalysis',   //or 'localhost:4433/spotifyanalysis'
                                     type: 'POST',
                                     data: JSON.stringify(sender),
                                     contentType: 'application/json',
-                                    success: function() { console.log('success');},
+                                    success: function(data) { console.log(data);},
                                     error  : function() { console.log('error');}
                                 });
 

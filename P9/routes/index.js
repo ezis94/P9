@@ -15,7 +15,9 @@ var Users = {};
 var User1 = require("../models/user");
 var Song = require("../models/song");
 var Song2 = require("../models/song2");
-
+var fetch = require("node-fetch");
+var canvas = require("canvas");
+var computer = require("./modules/computer");
 var Car = require("../models/user_car");
 var googleMapsClient = require('@google/maps').createClient({
     clientId: '897949743059-29ad8f8jb800tcr6snvp809bj8odglsu.apps.googleusercontent.com',
@@ -190,16 +192,59 @@ router.get("/playlistanalysis", function (request, response) {
 
 
 });});
-router.post("/spotifyanalysis", function (req, res) {
+var solver = function(element,i){
+    console.log("this is elem " + element[i].song.id + " and " + i);
+    if (i<373){
+        i++
+        fetch(`https://api.spotify.com/v1/audio-analysis/`+element[i].song.id, {
+            headers: {
+                Authorization: `Bearer BQDA6G1YQVVKS8jD1f7bBFEYOlJdMrsMmA9uVEXkYuy96zBM58I5xMIpPRjRlT6_BWluamQS5KCezbhylYU`
+            }
+        })
+            .then(d => d.json())
+            .then(data => {
+                if(!data.segments & typeof failure === "function") {
+                    return failure();
+                };
+                console.log(data.segments.length);
+                (result => {
 
 
-        console.log(req.body);
-        var sender_array= [];
- for(var i=0;i<req.body.rec_songs.length;i++){
-sender_array.push({id:req.body.rec_songs[i], arousal: Math.random(), valence:Math.random(), depth:Math.random()});
- }
-//I stopped coding here ------------------------------------------------------------
-  res.send("hi");
+
+
+                    var out = fs.createWriteStream('./test_' + i + '.png')
+                    var stream = draw(result).createPNGStream()
+                    stream.pipe(out)
+
+                    out.on('finish', () =>{ console.log('The PNG file was created.'+i); solver(element,i);})
+
+
+
+                })(computer(data));
+            })
+
+    }
+}
+router.get("/spotifyanalysis", function (req, res) {
+
+    process.nextTick(function () {
+        Song2.find({},function(err, element) {
+            if (err) return done(err);
+
+            else {
+                //    result.forEach(function(element) {
+//var i=7
+
+                solver(element,358);
+                //          });
+
+
+            }
+        });
+    });
+
+
+
 
     });
 
@@ -618,7 +663,70 @@ router.post("/spotify_status", function(req, res) {
         });
     });
 });
+router.get("/image/:id", function(request, response) {
+    console.log(request.params.id);
+    reAuthenticateOnFailure(failure =>
+        fetch(`https://api.spotify.com/v1/audio-analysis/${request.params.id}`, {
+            headers: {
+                Authorization: `Bearer BQDwRX5L3PhjqibmWXGgWabFwN0MqSDBiyspTJtPB4J8o0c_1kk5KVa-Y_RELsCUc-ShU0aSt270PMOD8-o`
+            }
+        })
+            .then(d => d.json())
+            .then(data => {
+                if(!data.segments & typeof failure === "function") {
+                    return failure();
+                };
+                console.log(data.segments.length);
+                (result => {
+                    request.query.raw
+                        ? (_ => {
+                            response.setHeader("Content-Type", "application/json");
+                            console.log(" the one");
 
+                            response.send(result);
+                        })()
+                        : (_ => {
+                            response.setHeader("Content-Type", "image/png");
+                            draw(result)
+                                .pngStream()
+                                .pipe(response);
+                            var out = fs.createWriteStream('./test.png')
+                            var stream = draw(result).createPNGStream()
+                            stream.pipe(out)
+                            out.on('finish', () =>  console.log('The PNG file was created.'))
+                            fs.writeFile("./out.png", result, 'base64', function(err) {
+                                console.log(err);
+                            });
+
+                        })();
+                })(computer(data));
+            })
+            .catch(fail => {
+                console.log(fail);
+                if (typeof failure === "function") {
+                    return failure();
+                }
+                response.send("failure");
+            })
+    );
+});
+function draw(matrix) {
+    var Canvas = require("canvas"),
+        Image = Canvas.Image,
+        canvas = new Canvas.Canvas(matrix.length, matrix.length),
+        ctx = canvas.getContext("2d");
+
+    matrix.forEach((row, y) => {
+        row.forEach((pixel, x) => {
+            //ctx.fillStyle = `rgba(29, 185, 84, ${Math.floor((1-(pixel/2.7538424065294658)) * 100)}%)`;
+            //ctx.fillStyle = `hsl(113, 91.7%, ${Math.floor((1-(pixel/2.7538424065294658)) * 37.8)}%)`
+            ctx.fillStyle = `hsl(113, 91.7%, ${Math.floor((1 - pixel) * 37.8)}%)`;
+            ctx.fillRect(x, y, 1, 1);
+        });
+    });
+
+    return canvas;
+}
 module.exports = router;
 
 function isLoggedIn(req, res, next) {
