@@ -10,22 +10,7 @@ var userSchema = mongoose.Schema({
             }
         ],
         id:String,
-        notes: [
-            {
-                timestamp:String,
-                pitches: [
-                    {
-                        type: String
-                    }
-                ],
-                timbre: [
-                    {
-                        type: String
-                    }
-                ]
-
-            }
-        ],
+        
 
         arousal: String,
         depth: String,

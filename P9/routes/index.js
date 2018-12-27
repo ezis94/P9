@@ -194,11 +194,11 @@ router.get("/playlistanalysis", function (request, response) {
 });});
 var solver = function(element,i){
     console.log("this is elem " + element[i].song.id + " and " + i);
-    if (i<373){
+    if (i<2012){
         i++
         fetch(`https://api.spotify.com/v1/audio-analysis/`+element[i].song.id, {
             headers: {
-                Authorization: `Bearer BQDA6G1YQVVKS8jD1f7bBFEYOlJdMrsMmA9uVEXkYuy96zBM58I5xMIpPRjRlT6_BWluamQS5KCezbhylYU`
+                Authorization: `Bearer  BQDg48XKFpQWke9IntHx6sNivalm_XmuOcat5rUFnFUM5iDMKPkG1xLPqy5jHPb5YW4qq31Nbmecftg4GHE`
             }
         })
             .then(d => d.json())
@@ -235,7 +235,7 @@ router.get("/spotifyanalysis", function (req, res) {
                 //    result.forEach(function(element) {
 //var i=7
 
-                solver(element,358);
+                solver(element,1950);
                 //          });
 
 
@@ -250,16 +250,18 @@ router.get("/spotifyanalysis", function (req, res) {
 
 router.get("/playnewlistanalysis", function (request, response) {
     process.nextTick(function () {
+//Song.update({}, {$unset: {"song.$.notes":1}} , {multi: true});
+
         Song.find({},function(err, element) {
             if (err) return done(err);
 
             else {
             //    result.forEach(function(element) {
 //var i=7
-for(var i=360;i<373;i++) {
+console.log("pls");
+for(var i=0;i<112;i++) {
     var newSong = new Song2();
 
-    newSong.song.notes = element[i].song.notes;
     newSong.song.id = element[i].song.id;
     newSong.song.name = element[i].song.name;
     newSong.song.artists = element[i].song.artists;
@@ -287,7 +289,7 @@ for(var i=360;i<373;i++) {
 
 
             }
-        });
+        }).skip(1900).limit( 112 );
     });
 });
 // listen for requests :)
@@ -668,7 +670,7 @@ router.get("/image/:id", function(request, response) {
     reAuthenticateOnFailure(failure =>
         fetch(`https://api.spotify.com/v1/audio-analysis/${request.params.id}`, {
             headers: {
-                Authorization: `Bearer BQDwRX5L3PhjqibmWXGgWabFwN0MqSDBiyspTJtPB4J8o0c_1kk5KVa-Y_RELsCUc-ShU0aSt270PMOD8-o`
+                Authorization: `Bearer BQBzvJDxzoHHVi2JGPBROArANCJCmoFtZh2qAnSubh-iSVjzY_EcJGYdkHDzCiCN8j4nheLzrAqZmjFLlEU`
             }
         })
             .then(d => d.json())
